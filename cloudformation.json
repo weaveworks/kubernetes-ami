@@ -1,0 +1,104 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Weave Cloud with Kubernetes",
+  "Parameters": {
+    "Nodes": {
+      "Type": "Number",
+      "Description": "Number of Kubernetes nodes",
+      "Default": "3"
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances (if none appear in drop-down menu, you need to create one)",
+      "MinLength": "1",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "WeaveCloudToken": {
+      "Type": "String",
+      "Description": "Optional - Authentication token for Weave Cloud [https://cloud.weave.works/]. Leave empty to launch without Weave Cloud benefits",
+      "Default": ""
+    }
+  },
+  "Mappings": {
+    "VpcCidrs": {
+      "vpc": {
+        "cidr": "172.31.0.0/16"
+      },
+      "pubsubnet1": {
+        "cidr": "172.31.0.0/24"
+      },
+      "pubsubnet2": {
+        "cidr": "172.31.1.0/24"
+      }
+    },
+  },
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "VpcCidrs",
+            "vpc",
+            "cidr"
+          ]
+        }
+      }
+    },
+    "WeaveKubernetesSecGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Weave + Kubernetes Allowed Ports",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "WeaveKubernetesSecGroupIngressSshPort": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "WeaveKubernetesSecGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "WeaveKubernetesSecGroupIngressAppPort": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "WeaveKubernetesSecGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "6383",
+        "ToPort": "6383",
+        "SourceSecurityGroupId": {
+          "Ref": "WeaveKubernetesSecGroup"
+        }
+      }
+    },
+    "WeaveKubernetesSecGroupIngressAppPort": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "WeaveKubernetesSecGroup"
+        },
+        "IpProtocol": "udp",
+        "FromPort": "6383",
+        "ToPort": "6384",
+        "SourceSecurityGroupId": {
+          "Ref": "WeaveKubernetesSecGroup"
+        }
+      }
+    },
+    "KubernetesNodeASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+    }
+  },
+  "Outputs": {
+    
+  }
+}
