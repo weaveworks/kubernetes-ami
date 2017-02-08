@@ -1,64 +1,180 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Weave Cloud with Kubernetes",
+  "Description": "Getting Started with Kubernetes",
   "Parameters": {
+    "KubeCommunityAMI": {
+      "Type": "String",
+      "Description": "Kubernetes Community AMI"
+    },
     "Nodes": {
       "Type": "Number",
       "Description": "Number of Kubernetes nodes",
       "Default": "3"
     },
+    "NodeInstanceType": {
+      "Type": "String",
+      "Description": "EC2 instance type to use for Kubernetes nodes",
+      "Default": "m4.xlarge"
+    },
+    "MasterInstanceType": {
+      "Type": "String",
+      "Description": "EC2 instance type to use for Kubernetes master (large instance type is recommended)",
+      "Default": "m4.large"
+    },
     "KeyName": {
       "Type": "AWS::EC2::KeyPair::KeyName",
-      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the ECS instances (if none appear in drop-down menu, you need to create one)",
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the Kubernetes instances (if none appear in drop-down menu, you need to create one)",
       "MinLength": "1",
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
-    },
-    "WeaveCloudToken": {
-      "Type": "String",
-      "Description": "Optional - Authentication token for Weave Cloud [https://cloud.weave.works/]. Leave empty to launch without Weave Cloud benefits",
-      "Default": ""
     }
   },
   "Mappings": {
-    "VpcCidrs": {
-      "vpc": {
-        "cidr": "172.31.0.0/16"
+    "Subnets": {
+      "VPC": {
+        "CIDR": "172.31.0.0/16"
       },
-      "pubsubnet1": {
-        "cidr": "172.31.0.0/24"
+      "AZ1": {
+        "CIDR": "172.31.0.0/24"
       },
-      "pubsubnet2": {
-        "cidr": "172.31.1.0/24"
+      "AZ2": {
+        "CIDR": "172.31.1.0/24"
       }
-    },
+    }
   },
   "Resources": {
-    "Vpc": {
+    "KubernetesVPC": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
         "CidrBlock": {
           "Fn::FindInMap": [
-            "VpcCidrs",
-            "vpc",
-            "cidr"
+            "Subnets",
+            "VPC",
+            "CIDR"
           ]
         }
       }
     },
-    "WeaveKubernetesSecGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
+    "SubnetAZ1": {
+      "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "GroupDescription": "Weave + Kubernetes Allowed Ports",
         "VpcId": {
-          "Ref": "Vpc"
+          "Ref": "KubernetesVPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "Subnets",
+            "AZ1",
+            "CIDR"
+          ]
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
         }
       }
     },
-    "WeaveKubernetesSecGroupIngressSshPort": {
+    "SubnetAZ2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        },
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "Subnets",
+            "AZ2",
+            "CIDR"
+          ]
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "KubernetesIG": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "AttachGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "KubernetesIG"
+        }
+      }
+    },
+    "RouteViaIG": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        }
+      }
+    },
+    "PublicRouteViaIG": {
+      "DependsOn": "AttachGateway",
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteViaIG"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "KubernetesIG"
+        }
+      }
+    },
+    "RouteSubnetAZ1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetAZ1"
+        },
+        "RouteTableId": {
+          "Ref": "RouteViaIG"
+        }
+      }
+    },
+    "RouteSubnetAZ2": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetAZ2"
+        },
+        "RouteTableId": {
+          "Ref": "RouteViaIG"
+        }
+      }
+    },
+    "KubernetesSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Kubernetes Allowed Ports",
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        }
+      }
+    },
+    "KubernetesIngressSSH": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
         "GroupId": {
-          "Ref": "WeaveKubernetesSecGroup"
+          "Ref": "KubernetesSG"
         },
         "IpProtocol": "tcp",
         "FromPort": "22",
@@ -66,39 +182,430 @@
         "CidrIp": "0.0.0.0/0"
       }
     },
-    "WeaveKubernetesSecGroupIngressAppPort": {
+    "KubernetesIngressWeaveNetTCP": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
         "GroupId": {
-          "Ref": "WeaveKubernetesSecGroup"
+          "Ref": "KubernetesSG"
         },
         "IpProtocol": "tcp",
         "FromPort": "6383",
         "ToPort": "6383",
         "SourceSecurityGroupId": {
-          "Ref": "WeaveKubernetesSecGroup"
+          "Ref": "KubernetesSG"
         }
       }
     },
-    "WeaveKubernetesSecGroupIngressAppPort": {
+    "KubernetesIngressWeaveNetUDP": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
         "GroupId": {
-          "Ref": "WeaveKubernetesSecGroup"
+          "Ref": "KubernetesSG"
         },
         "IpProtocol": "udp",
         "FromPort": "6383",
         "ToPort": "6384",
         "SourceSecurityGroupId": {
-          "Ref": "WeaveKubernetesSecGroup"
+          "Ref": "KubernetesSG"
+        }
+      }
+    },
+    "KubernetesMasterSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Kubernetes Allowed Ports",
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        }
+      }
+    },
+    "KubernetesIngressAPI": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesMasterSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "6443",
+        "ToPort": "6443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "KubernetesIngressDiscoveryAPI": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesMasterSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "9898",
+        "ToPort": "9898",
+        "SourceSecurityGroupId": {
+          "Ref": "KubernetesNodeSG"
+        }
+      }
+    },
+    "KubernetesMaster": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "KubeCommunityAMI"
+        },
+        "InstanceType": {
+          "Ref": "MasterInstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "Kubernetes Master - ",
+                  {
+                    "Ref": "AWS::StackName"
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Ref" : "KubernetesMasterSG"
+              },
+              {
+                "Ref" : "KubernetesSG"
+              }
+            ],
+            "SubnetId": {
+              "Ref" : "SubnetAZ1"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash -ex",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/usr/local/bin/cfn-init",
+                      "--verbose",
+                      "--stack",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "--region",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "--resource",
+                      "KubernetesMaster"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/usr/local/bin/cfn-signal",
+                      "--stack",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "--region",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "--resource",
+                      "KubernetesMaster"
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "config-kubeadm-init-only": [
+              "run-kubeadm-init"
+            ],
+            "config-kubeadm-init-and-weave-network-addon": [
+              "run-kubeadm-init",
+              "run-weave-network-addon"
+            ],
+            "default": [
+              {
+                "ConfigSet": "config-kubeadm-init-and-weave-network-addon"
+              }
+            ]
+          },
+          "run-kubeadm-init": {
+            "commands": {
+              "kubeadm-init": {
+                "command": "kubeadm init --api-advertise-addresses=\"$(ec2metadata --local-ipv4)\" --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"f091d4.272f31913aa67ae7\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+              },
+              "generate-remote-kubeconfig": {
+                "command": "public_ip=\"$(ec2metadata --public-ipv4)\"; server_url=\"https://${public_ip}:6443\"; cp /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig; kubectl --kubeconfig=\"/home/ubuntu/kubeconfig\" config set-cluster kubernetes --server=\"${server_url}\""
+              }
+            }
+          },
+          "run-weave-network-addon": {
+            "commands": {
+              "kubectl-create-network-addon": {
+                "command": "kubectl create -f /etc/weave-daemonset.yaml"
+              }
+            }
+          }
+        }
+      }
+    },
+    "KubernetesMasterEIP": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "InstanceId": {
+          "Ref": "KubernetesMaster"
+        },
+        "Domain": "vpc"
+      }
+    },
+    "KubernetesNodeSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Kubernetes Allowed Ports",
+        "VpcId": {
+          "Ref": "KubernetesVPC"
+        }
+      }
+    },
+    "KubernetesIngressNodePortsTCP": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesNodeSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "30000",
+        "ToPort": "32767",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "KubernetesIngressNodePortsUDP": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesNodeSG"
+        },
+        "IpProtocol": "udp",
+        "FromPort": "30000",
+        "ToPort": "32767",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "KubernetesNodeLC": {
+      "DependsOn": "KubernetesMaster",
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Ref": "KubeCommunityAMI"
+        },
+        "InstanceType": {
+          "Ref": "NodeInstanceType"
+        },
+        "AssociatePublicIpAddress": true,
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "KubernetesSG"
+          },
+          {
+            "Ref": "KubernetesNodeSG"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash -ex",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/usr/local/bin/cfn-init",
+                      "--verbose",
+                      "--stack",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "--region",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "--resource",
+                      "KubernetesNodeLC"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/usr/local/bin/cfn-signal",
+                      "--stack",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "--region",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "--resource",
+                      "KubernetesNodeASG"
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "config": {
+            "commands": {
+              "kubeadm-join": {
+                "command": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "kubeadm join --token=f091d4.272f31913aa67ae7",
+                      {
+                        "Fn::GetAtt": [
+                          "KubernetesMaster",
+                          "PrivateIp"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     },
     "KubernetesNodeASG": {
+      "DependsOn": "KubernetesMaster",
       "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "VPCZoneIdentifier": [
+          {
+            "Fn::Join": [
+              ",",
+              [
+                {
+                  "Ref": "SubnetAZ1"
+                }
+              ]
+            ]
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "KubernetesNodeLC"
+        },
+        "MinSize": "1",
+        "MaxSize": {
+          "Ref": "Nodes"
+        },
+        "DesiredCapacity": {
+          "Ref": "Nodes"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "Kubernetes Node - ",
+                  {
+                    "Ref": "AWS::StackName"
+                  }
+                ]
+              ]
+            },
+            "PropagateAtLaunch": "true"
+          }
+        ]
+      }
     }
   },
   "Outputs": {
-    
+    "MasterIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "KubernetesMaster",
+          "PublicIp"
+        ]
+      }
+    },
+    "LoginToMasterCommand": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "ssh -i /path/to/",
+            {
+              "Ref": "KeyName"
+            },
+            ".pem ubuntu@",
+            {
+              "Fn::GetAtt": [
+                "KubernetesMaster",
+                "PublicIp"
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    "GetKubeconfigCommand": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "scp -i /path/to/",
+            {
+              "Ref": "KeyName"
+            },
+            ".pem ubuntu@",
+            {
+              "Fn::GetAtt": [
+                "KubernetesMaster",
+                "PublicIp"
+              ]
+            },
+            ":kubeconfig ./kubeconfig"
+          ]
+        ]
+      }
+    }
   }
 }
