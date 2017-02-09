@@ -13,41 +13,25 @@
     "region": "{{user `aws_region`}}",
     "source_ami": "{{user `aws_base_ami`}}",
     "instance_type": "t2.micro",
-    "ami_name": "Weave Cloud (Kubernetes 1.4) (Ubuntu 16.04 LTS {{isotime \"2006-01-02\"}})",
+    "ami_name": "Kubernetes Community AMI (Ubuntu 16.04 LTS {{isotime \"2006-01-02 15.04.05\"}})",
     "ami_groups": "{{user `ami_groups`}}",
     "communicator": "ssh",
     "ssh_username": "ubuntu",
-    "ssh_file_transfer_method": "sftp",  
+    "ssh_file_transfer_method": "sftp",
     "ssh_pty": true
   }],
-  "provisioners": [{
-    "type": "file",
-    "source": "./ubuntu-kubernetes.list",
-    "destination": "/home/ubuntu/kubernetes.list"
-    }, {
-    "type": "file",
-    "source": "./launch-kubernetes.sh",
-    "destination": "/home/ubuntu/launch-kubernetes.sh"
-    }, {
-    "type": "shell",
-    "inline": [
-      "sudo curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-
-      "sudo mv /home/ubuntu/kubernetes.list /etc/apt/sources.list.d/kubernetes.list",
-      "sudo chown root:root /etc/apt/sources.list.d/kubernetes.list",
-      "sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list",
-
-      "sudo mv /home/ubuntu/setup-kubernetes.sh /usr/bin/setup-kubernetes",
-      "sudo chown root:root /usr/bin/setup-kubernetes",
-      "sudo chmod 755 /usr/bin/setup-kubernetes",
-
-      "sudo apt-get update",
-      "sudo apt-get upgrade -y",
-      "sudo apt-get install -y docker.io kubelet kubeadm kubectl kubernetes-cni",
-      "sudo apt-get install -y jq curl",
-
-      "sudo rm /root/.ssh/authorized_keys",
-      "sudo rm /home/ubuntu/.ssh/authorized_keys"
-    ]
-  }]
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./prepare-ami.sh",
+      "destination": "/home/ubuntu/prepare-ami.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo /bin/bash -eux /home/ubuntu/prepare-ami.sh",
+        "rm /home/ubuntu/prepare-ami.sh"
+      ]
+    }
+  ]
 }
