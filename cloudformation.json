@@ -355,12 +355,18 @@
             ]
           },
           "run-kubeadm-init": {
+            "files": {
+              "/usr/bin/kubeadm": {
+                "source": "https://dl.k8s.io/ci-cross/v1.6.0-alpha.1.589+ff87d13b2c9a82/bin/linux/amd64/kubeadm",
+                "mode": "000755"
+              }
+            },
             "commands": {
               "kubeadm-init": {
-                "command": "kubeadm init --api-advertise-addresses=\"$(ec2metadata --local-ipv4)\" --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"f091d4.272f31913aa67ae7\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+                "command": "set -x; kubeadm init --skip-preflight-checks --api-advertise-addresses=\"$(ec2metadata --local-ipv4)\" --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --discovery=\"token://81b2b0:c6c1cbd142c77d4c\""
               },
               "generate-remote-kubeconfig": {
-                "command": "public_ip=\"$(ec2metadata --public-ipv4)\"; server_url=\"https://${public_ip}:6443\"; cp /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig; kubectl --kubeconfig=\"/home/ubuntu/kubeconfig\" config set-cluster kubernetes --server=\"${server_url}\""
+                "command": "set -x; public_ip=\"$(ec2metadata --public-ipv4)\"; server_url=\"https://${public_ip}:6443\"; cp /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig; kubectl --kubeconfig=\"/home/ubuntu/kubeconfig\" config set-cluster kubernetes --server=\"${server_url}\"; chown ubuntu. /home/ubuntu/kubeconfig"
               }
             }
           },
@@ -489,19 +495,26 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "config": {
+            "files": {
+              "/usr/bin/kubeadm": {
+                "source": "https://dl.k8s.io/ci-cross/v1.6.0-alpha.1.589+ff87d13b2c9a82/bin/linux/amd64/kubeadm",
+                "mode": "000755"
+              }
+            },
             "commands": {
               "kubeadm-join": {
                 "command": {
                   "Fn::Join": [
-                    " ",
+                    "",
                     [
-                      "kubeadm join --token=f091d4.272f31913aa67ae7",
+                      "kubeadm join --skip-preflight-checks --discovery=token://81b2b0:c6c1cbd142c77d4c@",
                       {
                         "Fn::GetAtt": [
                           "KubernetesMaster",
                           "PrivateIp"
                         ]
-                      }
+                      },
+                      ":9898"
                     ]
                   ]
                 }
