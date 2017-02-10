@@ -189,8 +189,8 @@
           "Ref": "KubernetesSG"
         },
         "IpProtocol": "tcp",
-        "FromPort": "6383",
-        "ToPort": "6383",
+        "FromPort": "6783",
+        "ToPort": "6783",
         "SourceSecurityGroupId": {
           "Ref": "KubernetesSG"
         }
@@ -203,8 +203,8 @@
           "Ref": "KubernetesSG"
         },
         "IpProtocol": "udp",
-        "FromPort": "6383",
-        "ToPort": "6384",
+        "FromPort": "6783",
+        "ToPort": "6784",
         "SourceSecurityGroupId": {
           "Ref": "KubernetesSG"
         }
