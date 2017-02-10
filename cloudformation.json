@@ -4,7 +4,8 @@
   "Parameters": {
     "KubeCommunityAMI": {
       "Type": "String",
-      "Description": "Kubernetes Community AMI"
+      "Description": "Kubernetes Community AMI",
+      "AllowedPattern" : "ami-[a-f0-9]{8}"
     },
     "Nodes": {
       "Type": "Number",
@@ -26,9 +27,31 @@
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the Kubernetes instances (if none appear in drop-down menu, you need to create one)",
       "MinLength": "1",
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "NetworkAddon": {
+      "Type": "String",
+      "Description": "Select a pod Network addon to install",
+      "AllowedValues": [
+        "Weave",
+        "NONE"
+      ],
+      "Default": "Weave"
     }
   },
   "Mappings": {
+    "CurrentKubeCommunityAMIs": {
+      "us-west-2": {
+        "ImageId": "ami-847efbe4"
+      }
+    },
+    "NetworkAddonOptions": {
+      "Weave": {
+        "configSet": "config-kubeadm-init-and-weave-network-addon"
+      },
+      "NONE": {
+        "configSet": "config-kubeadm-init-only"
+      }
+    },
     "Subnets": {
       "VPC": {
         "CIDR": "172.31.0.0/16"
@@ -311,7 +334,17 @@
                         "Ref": "AWS::Region"
                       },
                       "--resource",
-                      "KubernetesMaster"
+                      "KubernetesMaster",
+                      "--configsets",
+                      {
+                        "Fn::FindInMap": [
+                          "NetworkAddonOptions",
+                          {
+                            "Ref": "NetworkAddon"
+                          },
+                          "configSet"
+                        ]
+                      }
                     ]
                   ]
                 },
