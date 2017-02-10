@@ -2,7 +2,7 @@
 
 A simple CloudFormation template and AMI builder for running Kubernetes on AWS EC2.
 
-The AMI is built with (Packer)[https://www.packer.io/] and includes the Kubernetes packages for installation with `kubeadm`.
+The AMI is built with [Packer](https://www.packer.io/) and includes the Kubernetes packages for installation with `kubeadm`.
 
 ## Design
 
