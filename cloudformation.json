@@ -356,10 +356,18 @@
           },
           "run-kubeadm-init": {
             "commands": {
-              "0-kubeadm-init": {
-                "command": "set -x; kubeadm init --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"f091d4.272f31913aa67ae7\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+              "0-mktoken": {
+                "command": {
+                  "Fn::Join": [ "", [ "echo \"", { "Ref": "AWS::StackId" }, "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token" ] ]
+                }
               },
-              "1-copy-kubeconfig": {
+              "1-kubeadm-init": {
+                "command": "set -x; kubeadm init --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"$(cat /tmp/kubeadm_token)\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+              },
+              "2-rmtoken": {
+                "command": "rm /tmp/kubeadm_token"
+              },
+              "3-copy-kubeconfig": {
                 "command": "install --owner=ubuntu --group=ubuntu /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig"
               }
             }
@@ -490,21 +498,18 @@
         "AWS::CloudFormation::Init": {
           "config": {
             "commands": {
-              "0-kubeadm-join": {
+              "0-mktoken": {
                 "command": {
-                  "Fn::Join": [
-                    " ",
-                    [
-                      "kubeadm join --token=\"f091d4.272f31913aa67ae7\"",
-                      {
-                        "Fn::GetAtt": [
-                          "KubernetesMaster",
-                          "PrivateIp"
-                        ]
-                      }
-                    ]
-                  ]
+                  "Fn::Join": [ "", [ "echo \"", { "Ref": "AWS::StackId" }, "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token" ] ]
                 }
+              },
+              "1-kubeadm-join": {
+                "command": {
+                  "Fn::Join": [ " ", [ "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"", { "Fn::GetAtt": [ "KubernetesMaster", "PrivateIp" ] } ] ]
+                }
+              },
+              "2-rmtoken": {
+                "command": "rm /tmp/kubeadm_token"
               }
             }
           }
@@ -571,7 +576,7 @@
         "Fn::Join": [
           "",
           [
-            "ssh -i /path/to/",
+            "ssh -i ",
             {
               "Ref": "KeyName"
             },
@@ -591,7 +596,7 @@
         "Fn::Join": [
           "",
           [
-            "scp -i /path/to/",
+            "scp -i ",
             {
               "Ref": "KeyName"
             },
