@@ -356,17 +356,17 @@
           },
           "run-kubeadm-init": {
             "commands": {
-              "kubeadm-init": {
-                "command": "kubeadm init --api-advertise-addresses=\"$(ec2metadata --local-ipv4)\" --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"f091d4.272f31913aa67ae7\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+              "0-kubeadm-init": {
+                "command": "set -x; kubeadm init --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"f091d4.272f31913aa67ae7\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
               },
-              "generate-remote-kubeconfig": {
-                "command": "public_ip=\"$(ec2metadata --public-ipv4)\"; server_url=\"https://${public_ip}:6443\"; cp /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig; kubectl --kubeconfig=\"/home/ubuntu/kubeconfig\" config set-cluster kubernetes --server=\"${server_url}\""
+              "1-copy-kubeconfig": {
+                "command": "install --owner=ubuntu --group=ubuntu /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig"
               }
             }
           },
           "run-weave-network-addon": {
             "commands": {
-              "kubectl-create-network-addon": {
+              "0-kubectl-create-network-addon": {
                 "command": "kubectl create -f /etc/weave-daemonset.yaml"
               }
             }
@@ -490,12 +490,12 @@
         "AWS::CloudFormation::Init": {
           "config": {
             "commands": {
-              "kubeadm-join": {
+              "0-kubeadm-join": {
                 "command": {
                   "Fn::Join": [
                     " ",
                     [
-                      "kubeadm join --token=f091d4.272f31913aa67ae7",
+                      "kubeadm join --token=\"f091d4.272f31913aa67ae7\"",
                       {
                         "Fn::GetAtt": [
                           "KubernetesMaster",
