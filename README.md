@@ -40,7 +40,7 @@ There is `ami-847efbe4` published in `us-west-2`.
 
 You will need to have an EC2 key in `us-west-2` region.
 
-To create a stack, firt clone this repo:
+To create a stack, first clone this repo:
 ```
 git clone https://github.com/weaveworks/kubernetes-ami
 cd kubernetes-ami
@@ -59,7 +59,7 @@ aws cloudformation create-stack \
       ParameterKey=KubeCommunityAMI,ParameterValue=ami-847efbe4
 ```
 
-By defualt a 3-node cluster will be deployed, which takes a few minutes...
+By default a 3-node cluster will be deployed, which takes a few minutes...
 You can run the following command to check the status of the stack.
 
 ```
