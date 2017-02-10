@@ -11,7 +11,6 @@ The CloudFormation template creates the following key components:
 - Kubernetes master EC2 instance
 - Auto Scaling Group for the Kubernetes minions
 - SecurityGroup for Kubernetes & pod network comms
-- 
 
 ## Parameters
 
