@@ -299,18 +299,9 @@
         ],
         "NetworkInterfaces": [
           {
-            "AssociatePublicIpAddress": "true",
             "DeviceIndex": "0",
-            "GroupSet": [
-              {
-                "Ref" : "KubernetesMasterSG"
-              },
-              {
-                "Ref" : "KubernetesSG"
-              }
-            ],
-            "SubnetId": {
-              "Ref" : "SubnetAZ1"
+            "NetworkInterfaceId" : {
+              "Ref" : "KubernetesMasterENI"
             }
           }
         ],
@@ -417,12 +408,42 @@
       }
     },
     "KubernetesMasterEIP": {
+      "DependsOn": "AttachGateway",
       "Type": "AWS::EC2::EIP",
       "Properties": {
-        "InstanceId": {
-          "Ref": "KubernetesMaster"
-        },
         "Domain": "vpc"
+      }
+    },
+    "KubernetesMasterENI": {
+      "DependsOn": "AttachGateway",
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "GroupSet": [
+          {
+            "Ref" : "KubernetesMasterSG"
+          },
+          {
+            "Ref" : "KubernetesSG"
+          }
+        ],
+        "SubnetId": {
+          "Ref" : "SubnetAZ1"
+        }
+      }
+    },
+    "KubernetesMasterAssociateEIP" : {
+      "DependsOn": "AttachGateway",
+      "Type" : "AWS::EC2::EIPAssociation",
+      "Properties" : {
+        "AllocationId" : {
+          "Fn::GetAtt" : [
+            "KubernetesMasterEIP",
+            "AllocationId"
+          ]
+        },
+        "NetworkInterfaceId" : {
+          "Ref" : "KubernetesMasterENI"
+        }
       }
     },
     "KubernetesNodeSG": {
