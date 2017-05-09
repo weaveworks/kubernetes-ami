@@ -1,6 +1,6 @@
 #!/bin/bash -eux
 
-kubernetes_release_tag="v1.5.2"
+kubernetes_release_tag="v1.6.2"
 
 ## Install official Kubernetes package
 
@@ -8,14 +8,17 @@ curl --silent "https://packages.cloud.google.com/apt/doc/apt-key.gpg" | apt-key 
 
 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 
+export DEBIAN_FRONTEND=noninteractive
+apt_flags=(-o "Dpkg::Options::=--force-confnew" -qy)
+
 apt-get update -q
-apt-get upgrade -qy
+apt-get upgrade "${apt_flags[@]}"
 # TODO pin versions here
-apt-get install -qy docker.io kubelet kubeadm kubectl kubernetes-cni
+apt-get install "${apt_flags[@]}" docker.io kubelet kubeadm kubectl kubernetes-cni
 
 ## Also install `jq` and `pip`
 
-apt-get install -qy jq python-pip
+apt-get install "${apt_flags[@]}" jq python-pip
 
 ## We will need AWS tools as well
 
@@ -25,14 +28,14 @@ pip install awscli
 ## Install `weave` command and DaemonSet manifest YAML
 
 curl --silent --location \
-  "https://github.com/weaveworks/weave/releases/download/v1.9.0/weave" \
+  "https://github.com/weaveworks/weave/releases/download/v1.9.5/weave" \
   --output /usr/bin/weave
 
 chmod 755 /usr/bin/weave
 
 curl --silent --location \
-  "https://github.com/weaveworks/weave/releases/download/v1.9.0/weave-daemonset.yaml" \
-  --output /etc/weave-daemonset.yaml
+  "https://cloud.weave.works/k8s/v1.6/net" \
+  --output /etc/weave-net.yaml
 
 ## Pre-fetch Kubernetes release image, so that `kubeadm init` is a bit quicker
 
@@ -41,9 +44,13 @@ images=(
   "gcr.io/google_containers/kube-apiserver-amd64:${kubernetes_release_tag}"
   "gcr.io/google_containers/kube-scheduler-amd64:${kubernetes_release_tag}"
   "gcr.io/google_containers/kube-controller-manager-amd64:${kubernetes_release_tag}"
-  "gcr.io/google_containers/etcd-amd64:3.0.14-kubeadm"
-  "gcr.io/google_containers/kube-discovery-amd64:1.0"
+  "gcr.io/google_containers/etcd-amd64:3.0.17"
   "gcr.io/google_containers/pause-amd64:3.0"
+  "gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1"
+  "gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1"
+  "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1"
+  "weaveworks/weave-npc:1.9.5"
+  "weaveworks/weave-kube:1.9.5"
 )
 
 for i in "${images[@]}" ; do docker pull "${i}" ; done

@@ -41,7 +41,7 @@
   "Mappings": {
     "CurrentKubeCommunityAMIs": {
       "us-west-2": {
-        "ImageId": "ami-847efbe4"
+        "ImageId": "ami-0c29b36c"
       }
     },
     "NetworkAddonOptions": {
@@ -270,6 +270,7 @@
     },
     "KubernetesMaster": {
       "Type": "AWS::EC2::Instance",
+      "DependsOn": "AttachGateway",
       "Properties": {
         "ImageId": {
           "Ref": "KubeCommunityAMI"
@@ -298,18 +299,9 @@
         ],
         "NetworkInterfaces": [
           {
-            "AssociatePublicIpAddress": "true",
             "DeviceIndex": "0",
-            "GroupSet": [
-              {
-                "Ref" : "KubernetesMasterSG"
-              },
-              {
-                "Ref" : "KubernetesSG"
-              }
-            ],
-            "SubnetId": {
-              "Ref" : "SubnetAZ1"
+            "NetworkInterfaceId" : {
+              "Ref" : "KubernetesMasterENI"
             }
           }
         ],
@@ -395,20 +387,20 @@
                 }
               },
               "1-kubeadm-init": {
-                "command": "set -x; kubeadm init --api-advertise-addresses=\"$(ec2metadata --public-ipv4)\" --token=\"$(cat /tmp/kubeadm_token)\" --use-kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
+                "command": "set -x; kubeadm init --apiserver-advertise-address=\"$(ec2metadata --public-ipv4)\" --token=\"$(cat /tmp/kubeadm_token)\" --kubernetes-version=\"$(cat /etc/kubernetes_community_ami_version)\""
               },
               "2-rmtoken": {
                 "command": "rm /tmp/kubeadm_token"
               },
               "3-copy-kubeconfig": {
-                "command": "install --owner=ubuntu --group=ubuntu /etc/kubernetes/admin.conf /home/ubuntu/kubeconfig"
+                "command": "install --owner=ubuntu --group=ubuntu --directory /home/ubuntu/.kube && install --owner=ubuntu --group=ubuntu --mode=0600 /etc/kubernetes/admin.conf /home/ubuntu/.kube/config"
               }
             }
           },
           "run-weave-network-addon": {
             "commands": {
               "0-kubectl-create-network-addon": {
-                "command": "kubectl create -f /etc/weave-daemonset.yaml"
+                "command": "kubectl --kubeconfig /etc/kubernetes/admin.conf create --namespace kube-system --filename /etc/weave-net.yaml"
               }
             }
           }
@@ -416,12 +408,42 @@
       }
     },
     "KubernetesMasterEIP": {
+      "DependsOn": "AttachGateway",
       "Type": "AWS::EC2::EIP",
       "Properties": {
-        "InstanceId": {
-          "Ref": "KubernetesMaster"
-        },
         "Domain": "vpc"
+      }
+    },
+    "KubernetesMasterENI": {
+      "DependsOn": "AttachGateway",
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "GroupSet": [
+          {
+            "Ref" : "KubernetesMasterSG"
+          },
+          {
+            "Ref" : "KubernetesSG"
+          }
+        ],
+        "SubnetId": {
+          "Ref" : "SubnetAZ1"
+        }
+      }
+    },
+    "KubernetesMasterAssociateEIP" : {
+      "DependsOn": "AttachGateway",
+      "Type" : "AWS::EC2::EIPAssociation",
+      "Properties" : {
+        "AllocationId" : {
+          "Fn::GetAtt" : [
+            "KubernetesMasterEIP",
+            "AllocationId"
+          ]
+        },
+        "NetworkInterfaceId" : {
+          "Ref" : "KubernetesMasterENI"
+        }
       }
     },
     "KubernetesNodeSG": {
@@ -538,7 +560,7 @@
               },
               "1-kubeadm-join": {
                 "command": {
-                  "Fn::Join": [ " ", [ "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"", { "Fn::GetAtt": [ "KubernetesMaster", "PrivateIp" ] } ] ]
+                  "Fn::Join": [ " ", [ "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"", { "Fn::Join": [ "", [ { "Fn::GetAtt": [ "KubernetesMaster", "PrivateIp" ] }, ":6443" ] ] } ] ]
                 }
               },
               "2-rmtoken": {
@@ -640,7 +662,7 @@
                 "PublicIp"
               ]
             },
-            ":kubeconfig ./kubeconfig"
+            ":.kube/config ./kubeconfig"
           ]
         ]
       }
