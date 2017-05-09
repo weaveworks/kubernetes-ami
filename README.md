@@ -36,7 +36,7 @@ Once the cluster is running, you need to login to it!
 
 ## Deployment Instructions
 
-There is `ami-847efbe4` published in `us-west-2`.
+There is `ami-0c29b36c` published in `us-west-2`.
 
 You will need to have an EC2 key in `us-west-2` region.
 
@@ -56,7 +56,7 @@ aws cloudformation create-stack \
     --template-body "file://cloudformation.json" \
     --parameters \
       ParameterKey=KeyName,ParameterValue=<YOUR_EC2_KEY_NAME> \
-      ParameterKey=KubeCommunityAMI,ParameterValue=ami-847efbe4
+      ParameterKey=KubeCommunityAMI,ParameterValue=ami-0c29b36c
 ```
 
 By default a 3-node cluster will be deployed, which takes a few minutes...

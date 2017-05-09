@@ -2,7 +2,7 @@
 
 set -eu
 
-AWS_BUILDS=('us-west-2,ami-746aba14')
+AWS_BUILDS=('us-west-2,ami-efd0428f')
 
 ORIG_DIR=`pwd`
 SCRIPT_DIR="$(cd "$(dirname "$0")"; pwd)"
