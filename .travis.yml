@@ -1,0 +1,22 @@
+language: python
+env:
+  global:
+  - PATH="${PATH}:${HOME}/.local/bin"
+install:
+  - pip install awscli
+script:
+  - aws cloudformation validate-template --region us-west-2 --template-body "file:////${PWD}/cloudformation.json" | jq .
+after_success:
+  - mkdir cfn-to-publish
+  - jq ".Description += \" (weaveworks/kubernetes-ami@${TRAVIS_COMMIT})\"" "cloudformation.json" > cfn-to-publish/cloudformation.json
+deploy:
+  provider: s3
+  access_key_id: "$AWS_ACCESS_KEY_ID"
+  secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+  bucket: weaveworks-cfn-public
+  skip_cleanup: true
+  local_dir: cfn-to-publish
+  upload_dir: kubernetes-ami
+  acl: public_read
+  on:
+    branch: master
