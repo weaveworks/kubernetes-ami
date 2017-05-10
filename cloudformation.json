@@ -39,43 +39,43 @@
         "ImageId": "ami-0c29b36c"
       },
       "ap-northeast-1": {
-        "ImageId": "ami-26132141"
+        "ImageId": "ami-eb17258c"
       },
       "ap-northeast-2": {
-        "ImageId": "ami-fa2e1c9d"
+        "ImageId": "ami-32ed305c"
       },
       "ap-south-1": {
-        "ImageId": "ami-af2c1ec8"
+        "ImageId": "ami-da0d70b5"
       },
       "ap-southeast-1": {
-        "ImageId": "ami-6d2d1f0a"
+        "ImageId": "ami-601b9e03"
       },
       "ap-southeast-2": {
-        "ImageId": "ami-d32d1fb4"
+        "ImageId": "ami-79000a1a"
       },
       "ca-central-1": {
-        "ImageId": "ami-902c1ef7"
+        "ImageId": "ami-c28539a6"
       },
       "eu-central-1": {
-        "ImageId": "ami-6e2d1f09"
+        "ImageId": "ami-993de3f6"
       },
       "eu-west-1": {
-        "ImageId": "ami-a11220c6"
+        "ImageId": "ami-8c7a74ea"
       },
       "eu-west-2": {
-        "ImageId": "ami-6a2f1d0d"
+        "ImageId": "ami-dc5a4db8"
       },
       "sa-east-1": {
-        "ImageId": "ami-25122042"
+        "ImageId": "ami-e1036c8d"
       },
       "us-east-1": {
-        "ImageId": "ami-d02e1cb7"
+        "ImageId": "ami-e59fe8f3"
       },
       "us-east-2": {
-        "ImageId": "ami-282c1e4f"
+        "ImageId": "ami-02f9de67"
       },
       "us-west-1": {
-        "ImageId": "ami-6f2d1f08"
+        "ImageId": "ami-14cfe974"
       }
     },
     "NetworkAddonOptions": {
