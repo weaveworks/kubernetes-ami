@@ -246,7 +246,7 @@
           "Ref": "KubernetesSG"
         },
         "IpProtocol": "tcp",
-        "FromPort": "6783",
+        "FromPort": "6781",
         "ToPort": "6783",
         "SourceSecurityGroupId": {
           "Ref": "KubernetesSG"
@@ -262,6 +262,34 @@
         "IpProtocol": "udp",
         "FromPort": "6783",
         "ToPort": "6784",
+        "SourceSecurityGroupId": {
+          "Ref": "KubernetesSG"
+        }
+      }
+    },
+    "KubernetesIngressPromNodeExporter": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "9100",
+        "ToPort": "9100",
+        "SourceSecurityGroupId": {
+          "Ref": "KubernetesSG"
+        }
+      }
+    },
+    "KubernetesIngressKubelet": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "KubernetesSG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "10250",
+        "ToPort": "10250",
         "SourceSecurityGroupId": {
           "Ref": "KubernetesSG"
         }
