@@ -36,9 +36,9 @@ Once the cluster is running, you need to login to it!
 
 ## Deployment Instructions
 
-There is `ami-0c29b36c` published in `us-west-2`.
+There are AMIs published in in all EC2 regions, please consult `cloudformation.json` for image IDs.
 
-You will need to have an EC2 key in `us-west-2` region.
+You will need to have an EC2 key in the region where you would like to deploy the cluster.
 
 To create a stack, first clone this repo:
 ```
@@ -55,8 +55,7 @@ aws cloudformation create-stack \
     --region us-west-2 \
     --template-body "file://cloudformation.json" \
     --parameters \
-      ParameterKey=KeyName,ParameterValue=<YOUR_EC2_KEY_NAME> \
-      ParameterKey=KubeCommunityAMI,ParameterValue=ami-0c29b36c
+      ParameterKey=KeyName,ParameterValue=<YOUR_EC2_KEY_NAME>
 ```
 
 By default a 3-node cluster will be deployed, which takes a few minutes...
@@ -73,10 +72,6 @@ You can run the following command to check the status of the stack.
                 {
                     "ParameterValue": "<YOUR_EC2_KEY_NAME>",
                     "ParameterKey": "KeyName"
-                },
-                {
-                    "ParameterValue": "ami-847efbe4",
-                    "ParameterKey": "KubeCommunityAMI"
                 },
                 {
                     "ParameterValue": "m4.large",
