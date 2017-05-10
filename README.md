@@ -4,6 +4,8 @@ A simple CloudFormation template and AMI builder for running Kubernetes on AWS E
 
 The AMI is built with [Packer](https://www.packer.io/) and includes the Kubernetes packages for installation with `kubeadm`.
 
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https:%2F%2Fs3.amazonaws.com%2Fweaveworks-cfn-public%2Fkubernetes-ami%2Fcloudformation.json&stackName=KubernetesGettingStarted)
+
 ## Design
 
 The CloudFormation template creates the following key components:
@@ -34,11 +36,11 @@ Once the cluster is running, you need to login to it!
 - `LoginToMasterCommand`
 - `GetKubeconfigCommand`
 
-## Deployment Instructions
+## Manual Deployment Instructions
 
-There is `ami-0c29b36c` published in `us-west-2`.
+There are AMIs published in in all EC2 regions, please consult `cloudformation.json` for image IDs.
 
-You will need to have an EC2 key in `us-west-2` region.
+You will need to have an EC2 key in the region where you would like to deploy the cluster.
 
 To create a stack, first clone this repo:
 ```
@@ -51,32 +53,27 @@ with the name of your SSH key in `us-west-2` region.
 
 ```
 aws cloudformation create-stack \
-    --stack-name kube-getting-started \
+    --stack-name KubernetesGettingStarted \
     --region us-west-2 \
     --template-body "file://cloudformation.json" \
     --parameters \
-      ParameterKey=KeyName,ParameterValue=<YOUR_EC2_KEY_NAME> \
-      ParameterKey=KubeCommunityAMI,ParameterValue=ami-0c29b36c
+      ParameterKey=KeyName,ParameterValue=<YOUR_EC2_KEY_NAME>
 ```
 
 By default a 3-node cluster will be deployed, which takes a few minutes...
 You can run the following command to check the status of the stack.
 
 ```
-> aws --region us-west-2 cloudformation describe-stacks --stack-name kube-getting-started
+> aws --region us-west-2 cloudformation describe-stacks --stack-name KubernetesGettingStarted
 {
     "Stacks": [
         {
-            "StackId": "arn:aws:cloudformation:us-west-2:992485676579:stack/kube-getting-started/802a0dad-ad8f-4273-b240-a0f313e1b288",
+            "StackId": "arn:aws:cloudformation:us-west-2:992485676579:stack/KubernetesGettingStarted/802a0dad-ad8f-4273-b240-a0f313e1b288",
             "Description": "Getting Started with Kubernetes",
             "Parameters": [
                 {
                     "ParameterValue": "<YOUR_EC2_KEY_NAME>",
                     "ParameterKey": "KeyName"
-                },
-                {
-                    "ParameterValue": "ami-847efbe4",
-                    "ParameterKey": "KubeCommunityAMI"
                 },
                 {
                     "ParameterValue": "m4.large",
@@ -111,7 +108,7 @@ You can run the following command to check the status of the stack.
                 }
             ],
             "CreationTime": "2017-02-10T16:14:26.733Z",
-            "StackName": "kube-getting-started",
+            "StackName": "KubernetesGettingStarted",
             "NotificationARNs": [],
             "StackStatus": "CREATE_COMPLETE",
             "DisableRollback": false
