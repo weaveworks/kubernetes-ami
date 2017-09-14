@@ -36,46 +36,46 @@
   "Mappings": {
     "CurrentKubeCommunityAMIs": {
       "us-west-2": {
-        "ImageId": "ami-0c29b36c"
+        "ImageId": "ami-2baf5c53"
       },
       "ap-northeast-1": {
-        "ImageId": "ami-eb17258c"
+        "ImageId": "ami-814a88e7"
       },
       "ap-northeast-2": {
-        "ImageId": "ami-32ed305c"
+        "ImageId": "ami-d600dbb8"
       },
       "ap-south-1": {
-        "ImageId": "ami-da0d70b5"
+        "ImageId": "ami-16f6b179"
       },
       "ap-southeast-1": {
-        "ImageId": "ami-601b9e03"
+        "ImageId": "ami-370f7a54"
       },
       "ap-southeast-2": {
-        "ImageId": "ami-79000a1a"
+        "ImageId": "ami-a031d6c2"
       },
       "ca-central-1": {
-        "ImageId": "ami-c28539a6"
+        "ImageId": "ami-85cf76e1"
       },
       "eu-central-1": {
-        "ImageId": "ami-993de3f6"
+        "ImageId": "ami-850cbbea"
       },
       "eu-west-1": {
-        "ImageId": "ami-8c7a74ea"
+        "ImageId": "ami-e717d49e"
       },
       "eu-west-2": {
-        "ImageId": "ami-dc5a4db8"
+        "ImageId": "ami-131e0d77"
       },
       "sa-east-1": {
-        "ImageId": "ami-e1036c8d"
+        "ImageId": "ami-b13a47dd"
       },
       "us-east-1": {
-        "ImageId": "ami-e59fe8f3"
+        "ImageId": "ami-fd17f087"
       },
       "us-east-2": {
-        "ImageId": "ami-02f9de67"
+        "ImageId": "ami-0be1c36e"
       },
       "us-west-1": {
-        "ImageId": "ami-14cfe974"
+        "ImageId": "ami-c94c7aa9"
       }
     },
     "NetworkAddonOptions": {
@@ -368,8 +368,8 @@
         "NetworkInterfaces": [
           {
             "DeviceIndex": "0",
-            "NetworkInterfaceId" : {
-              "Ref" : "KubernetesMasterENI"
+            "NetworkInterfaceId": {
+              "Ref": "KubernetesMasterENI"
             }
           }
         ],
@@ -451,7 +451,16 @@
             "commands": {
               "0-mktoken": {
                 "command": {
-                  "Fn::Join": [ "", [ "echo \"", { "Ref": "AWS::StackId" }, "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token" ] ]
+                  "Fn::Join": [
+                    "",
+                    [
+                      "echo \"",
+                      {
+                        "Ref": "AWS::StackId"
+                      },
+                      "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token"
+                    ]
+                  ]
                 }
               },
               "1-kubeadm-init": {
@@ -488,29 +497,29 @@
       "Properties": {
         "GroupSet": [
           {
-            "Ref" : "KubernetesMasterSG"
+            "Ref": "KubernetesMasterSG"
           },
           {
-            "Ref" : "KubernetesSG"
+            "Ref": "KubernetesSG"
           }
         ],
         "SubnetId": {
-          "Ref" : "SubnetAZ1"
+          "Ref": "SubnetAZ1"
         }
       }
     },
-    "KubernetesMasterAssociateEIP" : {
+    "KubernetesMasterAssociateEIP": {
       "DependsOn": "AttachGateway",
-      "Type" : "AWS::EC2::EIPAssociation",
-      "Properties" : {
-        "AllocationId" : {
-          "Fn::GetAtt" : [
+      "Type": "AWS::EC2::EIPAssociation",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
             "KubernetesMasterEIP",
             "AllocationId"
           ]
         },
-        "NetworkInterfaceId" : {
-          "Ref" : "KubernetesMasterENI"
+        "NetworkInterfaceId": {
+          "Ref": "KubernetesMasterENI"
         }
       }
     },
@@ -629,12 +638,40 @@
             "commands": {
               "0-mktoken": {
                 "command": {
-                  "Fn::Join": [ "", [ "echo \"", { "Ref": "AWS::StackId" }, "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token" ] ]
+                  "Fn::Join": [
+                    "",
+                    [
+                      "echo \"",
+                      {
+                        "Ref": "AWS::StackId"
+                      },
+                      "\" | shasum | sed 's/^\\([a-z0-9]\\{6\\}\\)\\([a-z0-9]\\{16\\}\\).*/\\1.\\2/' > /tmp/kubeadm_token"
+                    ]
+                  ]
                 }
               },
               "1-kubeadm-join": {
                 "command": {
-                  "Fn::Join": [ " ", [ "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"", { "Fn::Join": [ "", [ { "Fn::GetAtt": [ "KubernetesMaster", "PrivateIp" ] }, ":6443" ] ] } ] ]
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "KubernetesMaster",
+                                "PrivateIp"
+                              ]
+                            },
+                            ":6443"
+                          ]
+                        ]
+                      }
+                    ]
+                  ]
                 }
               },
               "2-rmtoken": {
