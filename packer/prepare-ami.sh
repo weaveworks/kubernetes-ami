@@ -1,6 +1,7 @@
 #!/bin/bash -eux
 
-kubernetes_release_tag="v1.6.2"
+kubernetes_release_tag="v1.7.6"
+weave_net_release_tag="v2.0.4"
 
 ## Install official Kubernetes package
 
@@ -28,13 +29,13 @@ pip install awscli
 ## Install `weave` command and DaemonSet manifest YAML
 
 curl --silent --location \
-  "https://github.com/weaveworks/weave/releases/download/v1.9.5/weave" \
+  "https://github.com/weaveworks/weave/releases/download/${weave_net_release_tag}/weave" \
   --output /usr/bin/weave
 
 chmod 755 /usr/bin/weave
 
 curl --silent --location \
-  "https://cloud.weave.works/k8s/v1.6/net" \
+  "https://cloud.weave.works/k8s/net?v=${weave_net_release_tag}&k8s-version=${kubernetes_release_tag}" \
   --output /etc/weave-net.yaml
 
 ## Pre-fetch Kubernetes release image, so that `kubeadm init` is a bit quicker
@@ -46,11 +47,11 @@ images=(
   "gcr.io/google_containers/kube-controller-manager-amd64:${kubernetes_release_tag}"
   "gcr.io/google_containers/etcd-amd64:3.0.17"
   "gcr.io/google_containers/pause-amd64:3.0"
-  "gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.1"
-  "gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.1"
-  "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.1"
-  "weaveworks/weave-npc:1.9.5"
-  "weaveworks/weave-kube:1.9.5"
+  "gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4"
+  "gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.4"
+  "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.4"
+  "weaveworks/weave-npc:${weave_net_release_tag/v/}"
+  "weaveworks/weave-kube:${weave_net_release_tag/v/}"
 )
 
 for i in "${images[@]}" ; do docker pull "${i}" ; done
