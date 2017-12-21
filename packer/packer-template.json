@@ -1,7 +1,8 @@
 {
   "variables": {
-    "aws_access_key": "{{env `AWS_ACCESS_KEY`}}",
+    "aws_profile": "{{env `AWS_DEFAULT_PROFILE`}}",
     "aws_secret_key": "{{env `AWS_SECRET_KEY`}}",
+    "aws_security_token": "{{env `AWS_SECURITY_TOKEN`}}",
     "aws_region": "",
     "aws_base_ami": "",
     "ami_groups": ""
@@ -10,6 +11,7 @@
     "type": "amazon-ebs",
     "access_key": "{{user `aws_access_key`}}",
     "secret_key": "{{user `aws_secret_key`}}",
+    "token": "{{user `aws_security_token`}}",
     "region": "{{user `aws_region`}}",
     "source_ami": "{{user `aws_base_ami`}}",
     "instance_type": "t2.micro",
