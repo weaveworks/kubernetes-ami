@@ -36,46 +36,46 @@
   "Mappings": {
     "CurrentKubeCommunityAMIs": {
       "us-west-2": {
-        "ImageId": "ami-2baf5c53"
+        "ImageId": "ami-5a943922"
       },
       "ap-northeast-1": {
-        "ImageId": "ami-814a88e7"
+        "ImageId": "ami-94f279f2"
       },
       "ap-northeast-2": {
-        "ImageId": "ami-d600dbb8"
+        "ImageId": "ami-e4a9088a"
       },
       "ap-south-1": {
-        "ImageId": "ami-16f6b179"
+        "ImageId": "ami-ca1359a5"
       },
       "ap-southeast-1": {
-        "ImageId": "ami-370f7a54"
+        "ImageId": "ami-5588e729"
       },
       "ap-southeast-2": {
-        "ImageId": "ami-a031d6c2"
+        "ImageId": "ami-40659422"
       },
       "ca-central-1": {
-        "ImageId": "ami-85cf76e1"
+        "ImageId": "ami-c663d9a2"
       },
       "eu-central-1": {
-        "ImageId": "ami-850cbbea"
+        "ImageId": "ami-6590040a"
       },
       "eu-west-1": {
-        "ImageId": "ami-e717d49e"
+        "ImageId": "ami-c27dffbb"
       },
       "eu-west-2": {
-        "ImageId": "ami-131e0d77"
+        "ImageId": "ami-18ecf57c"
       },
       "sa-east-1": {
-        "ImageId": "ami-b13a47dd"
+        "ImageId": "ami-54b3f238"
       },
       "us-east-1": {
-        "ImageId": "ami-fd17f087"
+        "ImageId": "ami-d65d26ac"
       },
       "us-east-2": {
-        "ImageId": "ami-0be1c36e"
+        "ImageId": "ami-79d9f11c"
       },
       "us-west-1": {
-        "ImageId": "ami-c94c7aa9"
+        "ImageId": "ami-f6898e96"
       }
     },
     "NetworkAddonOptions": {
@@ -655,7 +655,7 @@
                   "Fn::Join": [
                     " ",
                     [
-                      "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\"",
+                      "kubeadm join --token=\"$(cat /tmp/kubeadm_token)\" --discovery-token-unsafe-skip-ca-verification",
                       {
                         "Fn::Join": [
                           "",
